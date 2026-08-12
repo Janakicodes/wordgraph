@@ -1,0 +1,19 @@
+kind = "design-system"
+previewPath = "/wordgraph-design-system/"
+title = "WordGraph Design System"
+description = "A reusable typography-led design system for WordGraph, a calm visual vocabulary map for students, writers, professionals, and English learners. It defines restrained light and dark themes, semantic graph colors, responsive layout primitives, and the core interaction language for word exploration."
+version = "1.0.0"
+id = "artifacts/wordgraph-design-system"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/wordgraph-design-system/" ]
+localPort = 19525
+
+[services.development]
+run = "pnpm --filter @workspace/wordgraph-design-system run dev"
+
+[services.env]
+PORT = "19525"
+BASE_PATH = "/wordgraph-design-system/"

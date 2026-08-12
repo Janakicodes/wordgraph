@@ -1,0 +1,614 @@
+# WordGraph — Initial Product Build Prompt
+
+You are building **WordGraph**, a web-first vocabulary exploration product.
+
+Before writing significant code, understand the product philosophy and requirements below.
+
+---
+
+# 1. WHAT IS WORDGRAPH?
+
+WordGraph is a minimalist vocabulary web application.
+
+It is NOT primarily a dictionary.
+
+It is NOT a quiz application.
+
+It is NOT a flashcard application.
+
+It is NOT a gamified English-learning platform.
+
+The core idea is:
+
+> **Explore words. See how they connect. Build your vocabulary map.**
+
+A user searches for a word.
+
+That word appears in the center of an interactive visual graph.
+
+Around it are:
+
+* Synonyms
+* Antonyms
+* Related words
+
+The user can click any connected word.
+
+That word becomes the new center.
+
+The graph reorganizes around it.
+
+The user can continue exploring indefinitely.
+
+---
+
+# 2. CORE EXPERIENCE
+
+Example:
+
+User searches:
+
+PRAGMATIC
+
+The application should create an experience conceptually similar to:
+
+```text
+                       practical
+
+                           │
+
+            sensible ── PRAGMATIC ── idealistic
+
+                           │
+
+                       realistic
+```
+
+The actual graph should be more organic and visually elegant.
+
+The center word should be significantly larger than connected words.
+
+Connected words should be represented primarily through typography rather than colorful bubbles or cards.
+
+---
+
+# 3. THREE RELATIONSHIP TYPES
+
+There are only three semantic relationship types.
+
+## Synonyms
+
+Words with similar meaning.
+
+Represent using:
+
+Muted green
+
+## Antonyms
+
+Words with opposite meaning.
+
+Represent using:
+
+Muted red
+
+## Related
+
+Contextually connected words.
+
+Represent using:
+
+Muted blue
+
+Do NOT create a separate "Word Family" relationship.
+
+Word-family relationships can be treated as Related.
+
+Do not introduce additional relationship categories unless explicitly requested later.
+
+---
+
+# 4. IMPORTANT PRODUCT PHILOSOPHY
+
+Keep the product simple.
+
+Do NOT add:
+
+* Quizzes
+* Flashcards
+* XP
+* Streaks
+* Leaderboards
+* Badges
+* Social profiles
+* Friends
+* Comments
+* AI chat
+* Gamification
+* Mandatory login
+* Paid subscriptions
+* Advertising
+
+The product should feel like a calm knowledge tool.
+
+---
+
+# 5. USER JOURNEY
+
+The primary journey is:
+
+```text
+Open WordGraph
+      ↓
+Search for a word
+      ↓
+Explore the word graph
+      ↓
+Click a connected word
+      ↓
+Explore the new word
+      ↓
+Save interesting words
+      ↓
+Organize them in Library
+      ↓
+Return later
+```
+
+The first interaction should require almost no onboarding.
+
+---
+
+# 6. HOME PAGE
+
+The homepage should be minimal.
+
+Main message:
+
+> Explore words. Build your vocabulary map.
+
+Primary search:
+
+> Search a word...
+
+Secondary areas:
+
+* Continue Exploring
+* Recently Viewed
+* Saved Words
+* Random Word
+
+Do not make the homepage feel like a marketing landing page.
+
+It should feel like opening a useful tool.
+
+---
+
+# 7. WORD EXPLORER
+
+This is the core product.
+
+The graph should occupy most of the viewport.
+
+The selected word is in the center.
+
+Below or beside the graph, show:
+
+Meaning
+
+Pronunciation
+
+Part of Speech
+
+Secondary information should be expandable:
+
+Examples
+
+Memory Trick
+
+Usage Notes
+
+---
+
+# 8. WORD INTERACTION
+
+When a user clicks a connected word:
+
+DO NOT navigate to an entirely separate page.
+
+Instead:
+
+* Animate the clicked word toward the center.
+* Reposition surrounding nodes.
+* Update the word information.
+* Update the URL if appropriate.
+* Preserve the feeling of continuous exploration.
+
+The user should feel like they are moving through a map.
+
+---
+
+# 9. LIBRARY
+
+The Library is the user's personal vocabulary knowledge base.
+
+It should be inspired by **Obsidian**, not a conventional favorites list.
+
+Users can:
+
+* Save words
+* Create collections
+* Add tags
+* Add personal notes
+* View their saved-word graph
+* Search their library
+* Export their data
+
+Example collections:
+
+Work
+
+Books
+
+Finance
+
+Interview
+
+Product Management
+
+Daily Vocabulary
+
+---
+
+# 10. NO LOGIN
+
+The MVP must NOT require authentication.
+
+The user should be able to use the entire core product anonymously.
+
+Use local browser storage for the personal library.
+
+Recommended:
+
+IndexedDB
+
+Dexie.js
+
+The user owns their data.
+
+---
+
+# 11. PERSONAL LIBRARY DATA
+
+Store locally:
+
+* Saved words
+* Collections
+* Tags
+* Notes
+* Recently viewed words
+* Search history
+* User preferences
+
+The library should remain available after closing and reopening the browser.
+
+---
+
+# 12. GRAPH VIEW OF LIBRARY
+
+The Library should have two major views:
+
+### List / Knowledge Base
+
+An Obsidian-inspired file explorer.
+
+### Graph
+
+A visual graph showing the user's saved words and their relationships.
+
+Only saved words need to appear in the personal graph.
+
+---
+
+# 13. WORD INFORMATION
+
+Each word should support:
+
+* Word
+* Meaning
+* Pronunciation
+* Part of speech
+* Synonyms
+* Antonyms
+* Related words
+* Two example sentences
+* Memory trick
+* Usage notes
+
+Not all information needs to be visible simultaneously.
+
+The primary screen should remain visually clean.
+
+---
+
+# 14. WEB-FIRST
+
+Build this as a responsive web application.
+
+Primary target:
+
+Desktop browser.
+
+Secondary:
+
+Tablet.
+
+Third:
+
+Mobile browser.
+
+The desktop graph experience is the priority.
+
+Do not build a native mobile application.
+
+Eventually the website can become a PWA.
+
+---
+
+# 15. TECHNOLOGY
+
+Use:
+
+React
+
+TypeScript
+
+Tailwind CSS
+
+Lucide React
+
+Use a graph library suitable for an interactive knowledge graph.
+
+Evaluate:
+
+React Flow
+
+Cytoscape.js
+
+Choose the one that gives the best experience for:
+
+* zoom
+* pan
+* node selection
+* dynamic layout
+* smooth transitions
+* responsive rendering
+
+Use IndexedDB for local data.
+
+Use Dexie.js if appropriate.
+
+---
+
+# 16. ARCHITECTURE
+
+Use a clean, modular architecture.
+
+Separate:
+
+UI
+
+Graph engine
+
+Word data
+
+Local storage
+
+Search
+
+Library
+
+Settings
+
+Do not put everything into one component.
+
+Create reusable components.
+
+---
+
+# 17. ROUTES
+
+Plan the application around:
+
+/
+
+Home
+
+/explore/[word]
+
+Word Explorer
+
+/library
+
+Personal Library
+
+/library/graph
+
+Personal Graph
+
+/settings
+
+Settings
+
+/design-system
+
+Internal design-system showcase
+
+---
+
+# 18. DESIGN SYSTEM
+
+Before building the full application, establish a consistent design system.
+
+The visual direction should be:
+
+**Obsidian × Apple × Linear**
+
+Characteristics:
+
+* Minimal
+* Typography-led
+* Neutral interface
+* Restrained colors
+* Subtle borders
+* Minimal shadows
+* Excellent dark mode
+* Generous whitespace
+* Smooth interactions
+
+The vocabulary graph is the visual hero.
+
+---
+
+# 19. DEVELOPMENT APPROACH
+
+Build incrementally.
+
+Do not attempt to build the entire application in one giant implementation.
+
+Use these phases:
+
+### Phase 1
+
+Design system + application shell.
+
+### Phase 2
+
+Home + Search.
+
+### Phase 3
+
+Interactive Word Explorer.
+
+### Phase 4
+
+Local Library.
+
+### Phase 5
+
+Library Graph.
+
+### Phase 6
+
+Notes, collections and tags.
+
+### Phase 7
+
+Export/import.
+
+### Phase 8
+
+Responsive and accessibility polish.
+
+### Phase 9
+
+PWA/offline improvements.
+
+---
+
+# 20. FIRST TASK
+
+For the first implementation phase, DO NOT build the entire product.
+
+Build only:
+
+1. Project structure
+2. Design token system
+3. Light theme
+4. Dark theme
+5. Application shell
+6. Navigation
+7. Search bar
+8. Responsive layout
+9. Design-system showcase
+10. Static interactive WordGraph prototype
+
+Use:
+
+**PRAGMATIC**
+
+as the demonstration word.
+
+Populate it with representative sample data:
+
+Synonyms:
+
+Practical
+
+Realistic
+
+Sensible
+
+Antonyms:
+
+Idealistic
+
+Impractical
+
+Related:
+
+Decision
+
+Approach
+
+Practicality
+
+Strategy
+
+---
+
+# 21. IMPORTANT
+
+Do not invent additional product features.
+
+Do not add gamification.
+
+Do not add unnecessary dashboards.
+
+Do not add authentication.
+
+Do not add a database yet.
+
+Do not integrate an external dictionary API yet.
+
+Do not optimize for SEO yet.
+
+First establish the product's visual language and core interaction.
+
+The first milestone is:
+
+> **A beautiful, responsive WordGraph prototype that demonstrates the central vocabulary exploration experience.**
+
+Once that is working, we will implement the actual data layer and library.
+
+---
+
+# 22. BEFORE CODING
+
+First inspect the existing Replit project.
+
+If it is empty, establish the project structure.
+
+If code already exists, do not unnecessarily rewrite it.
+
+Identify:
+
+* Framework
+* Existing components
+* Existing styles
+* Existing dependencies
+* Existing routing
+
+Then propose the implementation structure briefly before making major changes.
+
+After that, begin Phase 1.
