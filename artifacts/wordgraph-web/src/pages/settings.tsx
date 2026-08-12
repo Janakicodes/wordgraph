@@ -57,15 +57,25 @@ async function exportMarkdown(): Promise<void> {
   ];
 
   for (const sw of snapshot.savedWords) {
-    const data = WORD_DB[sw.word];
+    // Use persisted SavedWord fields so API-fetched words are included in exports.
+    // WORD_DB is consulted only for commonness, which is exclusive to static entries.
+    const staticData = WORD_DB[sw.word];
+    const partOfSpeech = sw.partOfSpeech || staticData?.partOfSpeech;
+    const pronunciation = sw.ipa || staticData?.pronunciation;
+    const definition = sw.definition || staticData?.definition;
     lines.push(`## ${sw.word}`);
     lines.push('');
-    if (data) {
-      lines.push(
-        `**${data.partOfSpeech}** · ${data.pronunciation} · ${COMMONNESS_LABELS[data.commonness]}`,
-      );
+    if (partOfSpeech || pronunciation || staticData?.commonness) {
+      const metaParts = [
+        partOfSpeech ? `**${partOfSpeech}**` : null,
+        pronunciation ?? null,
+        staticData?.commonness ? COMMONNESS_LABELS[staticData.commonness] : null,
+      ].filter(Boolean);
+      lines.push(metaParts.join(' · '));
       lines.push('');
-      lines.push(data.definition);
+    }
+    if (definition) {
+      lines.push(definition);
       lines.push('');
     }
     if (sw.notes) {
@@ -108,15 +118,17 @@ async function exportCsv(): Promise<void> {
 
   const header = 'word,part_of_speech,definition,commonness,collections,tags,notes,saved_at\n';
   const rows = snapshot.savedWords.map((sw) => {
-    const data = WORD_DB[sw.word];
+    // Use persisted SavedWord fields; WORD_DB only for commonness (static words only)
+    const staticData = WORD_DB[sw.word];
+    const partOfSpeech = sw.partOfSpeech || staticData?.partOfSpeech || '';
     const cols = (wordColsMap.get(sw.word) ?? []).join('; ');
     const tags = sw.tags.join('; ');
     const savedDate = new Date(sw.savedAt).toISOString().split('T')[0];
     return [
       escape(sw.word),
-      escape(data?.partOfSpeech ?? ''),
+      escape(partOfSpeech),
       escape(sw.definition),
-      escape(data ? COMMONNESS_LABELS[data.commonness] : ''),
+      escape(staticData ? COMMONNESS_LABELS[staticData.commonness] : ''),
       escape(cols),
       escape(tags),
       escape(sw.notes),

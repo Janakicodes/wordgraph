@@ -122,7 +122,12 @@ function WordListItem({ savedWord }: WordListItemProps) {
     else await removeWordFromCollection(savedWord.word, colId);
   };
 
-  const data = WORD_DB[savedWord.word];
+  // Use persisted SavedWord fields as primary source so API-fetched words display correctly.
+  // WORD_DB is consulted only for the commonness badge, which is exclusive to static entries.
+  const staticData = WORD_DB[savedWord.word];
+  const displayPartOfSpeech = savedWord.partOfSpeech || staticData?.partOfSpeech;
+  const displayDefinition = savedWord.definition || staticData?.definition;
+  const displayIpa = savedWord.ipa || staticData?.pronunciation;
   const wordCols = collections.filter(
     (c) => c.id !== undefined && wordColIds.includes(c.id),
   );
@@ -150,30 +155,30 @@ function WordListItem({ savedWord }: WordListItemProps) {
             >
               {savedWord.word}
             </Link>
-            {data && (
+            {displayPartOfSpeech && (
               <span className="text-xs text-muted-foreground italic">
-                {data.partOfSpeech}
+                {displayPartOfSpeech}
               </span>
             )}
-            {data?.commonness && (
+            {staticData?.commonness && (
               <span
                 className={cn(
                   'text-xs px-1.5 py-0.5 rounded-full border font-medium',
-                  data.commonness === 'very-common' &&
+                  staticData.commonness === 'very-common' &&
                     'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
-                  data.commonness === 'common' &&
+                  staticData.commonness === 'common' &&
                     'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800',
-                  data.commonness === 'less-common' &&
+                  staticData.commonness === 'less-common' &&
                     'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
                 )}
               >
-                {COMMONNESS_LABELS[data.commonness]}
+                {COMMONNESS_LABELS[staticData.commonness]}
               </span>
             )}
           </div>
-          {data && (
+          {displayDefinition && (
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-snug">
-              {data.definition}
+              {displayDefinition}
             </p>
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -209,14 +214,14 @@ function WordListItem({ savedWord }: WordListItemProps) {
       {expanded && (
         <div className="border-t border-border px-5 py-4 space-y-4">
           {/* Full definition */}
-          {data && (
+          {displayDefinition && (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
                 Definition
               </p>
-              <p className="text-sm text-foreground leading-relaxed">{data.definition}</p>
-              {data.pronunciation && (
-                <p className="text-xs text-muted-foreground mt-1">{data.pronunciation}</p>
+              <p className="text-sm text-foreground leading-relaxed">{displayDefinition}</p>
+              {displayIpa && (
+                <p className="text-xs text-muted-foreground mt-1">{displayIpa}</p>
               )}
             </div>
           )}

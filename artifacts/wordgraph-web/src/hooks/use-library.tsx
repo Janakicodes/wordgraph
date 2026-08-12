@@ -3,7 +3,7 @@
 
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type SavedWord, type Collection, type WordCollection } from '@/lib/db';
-import { WORD_DB } from '@/data/words';
+import { lookupWord } from '@/lib/dictionary';
 
 // ── Read hooks ────────────────────────────────────────────────────────────────
 
@@ -89,9 +89,11 @@ export function useWordsByTag(tag: string): SavedWord[] {
 /** Save a word to the library (or update if already saved). */
 export async function saveWord(word: string): Promise<void> {
   const key = word.toLowerCase();
-  const data = WORD_DB[key];
   const existing = await db.savedWords.get(key);
   if (existing) return; // already saved — don't overwrite user data
+  // lookupWord checks static WORD_DB first, then IndexedDB cache — no extra network call
+  const result = await lookupWord(key);
+  const data = result.kind === 'found' ? result.data : null;
   await db.savedWords.put({
     word: key,
     definition: data?.definition ?? '',

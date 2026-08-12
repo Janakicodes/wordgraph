@@ -7,6 +7,8 @@ import {
   ChevronUp,
   ArrowLeft,
   ChevronRight,
+  Loader2,
+  SearchX,
 } from 'lucide-react';
 import { Button } from '@workspace/wordgraph-design-system/components/ui/button';
 import {
@@ -24,11 +26,11 @@ import { useToast } from '@workspace/wordgraph-design-system/hooks/use-toast';
 import { cn } from '@workspace/wordgraph-design-system/lib/utils';
 import { WordGraph } from '@/components/graph/WordGraph';
 import {
-  buildGraphData,
-  WORD_DB,
   addRecentWord,
   COMMONNESS_LABELS,
+  type WordData,
 } from '@/data/words';
+import { lookupWord, buildGraphDataFromWordData, type LookupResult } from '@/lib/dictionary';
 import {
   useIsSaved,
   useCollections,
@@ -194,11 +196,18 @@ function CollapsibleSection({
 
 // ── Word info panel ───────────────────────────────────────────────────────────
 
+type LookupState =
+  | { status: 'loading' }
+  | { status: 'found'; data: WordData }
+  | { status: 'not-found' }
+  | { status: 'error'; reason?: string };
+
 interface WordInfoProps {
   word: string;
+  lookupState: LookupState;
 }
 
-function WordInfoPanel({ word }: WordInfoProps) {
+function WordInfoPanel({ word, lookupState }: WordInfoProps) {
   const { toast } = useToast();
   const isSaved = useIsSaved(word);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -223,15 +232,60 @@ function WordInfoPanel({ word }: WordInfoProps) {
     }
   };
 
-  const data = WORD_DB[word.toLowerCase()];
-
-  if (!data) {
+  // Loading state
+  if (lookupState.status === 'loading') {
     return (
-      <div className="text-sm text-muted-foreground py-4">
-        No detailed information available for &ldquo;{word}&rdquo;.
+      <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin" aria-hidden />
+        <p className="text-sm">Looking up &ldquo;{word}&rdquo;&hellip;</p>
       </div>
     );
   }
+
+  // Not found state
+  if (lookupState.status === 'not-found') {
+    return (
+      <div className="flex flex-col items-start gap-3 py-6">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <SearchX className="w-5 h-5 shrink-0" aria-hidden />
+          <h1 className="text-lg font-semibold text-foreground capitalize">
+            {word}
+          </h1>
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          We couldn&rsquo;t find &ldquo;{word}&rdquo; in the dictionary. Double-check
+          the spelling, or try a different word.
+        </p>
+        <Link
+          href="/"
+          className="text-sm text-primary hover:underline focus-ring rounded"
+        >
+          ← Search for another word
+        </Link>
+      </div>
+    );
+  }
+
+  // Network / transient error
+  if (lookupState.status === 'error') {
+    return (
+      <div className="flex flex-col items-start gap-3 py-6">
+        <h1 className="text-lg font-semibold text-foreground capitalize">{word}</h1>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Something went wrong while looking up this word. Check your connection
+          and try refreshing the page.
+        </p>
+        <Link
+          href="/"
+          className="text-sm text-primary hover:underline focus-ring rounded"
+        >
+          ← Back to search
+        </Link>
+      </div>
+    );
+  }
+
+  const data = lookupState.data;
 
   return (
     <>
@@ -253,24 +307,28 @@ function WordInfoPanel({ word }: WordInfoProps) {
             </h1>
             <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
               <span className="italic">{data.partOfSpeech}</span>
-              <span aria-label={`Pronunciation: ${data.pronunciation}`}>
-                {data.pronunciation}
-              </span>
-            </div>
-            {/* Commonness indicator */}
-            <span
-              className={cn(
-                'inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full border',
-                data.commonness === 'very-common' &&
-                  'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
-                data.commonness === 'common' &&
-                  'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800',
-                data.commonness === 'less-common' &&
-                  'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+              {data.pronunciation && (
+                <span aria-label={`Pronunciation: ${data.pronunciation}`}>
+                  {data.pronunciation}
+                </span>
               )}
-            >
-              {COMMONNESS_LABELS[data.commonness]}
-            </span>
+            </div>
+            {/* Commonness indicator — only shown for static words */}
+            {data.commonness && (
+              <span
+                className={cn(
+                  'inline-block mt-2 text-xs font-medium px-2 py-0.5 rounded-full border',
+                  data.commonness === 'very-common' &&
+                    'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800',
+                  data.commonness === 'common' &&
+                    'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-400 dark:border-sky-800',
+                  data.commonness === 'less-common' &&
+                    'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800',
+                )}
+              >
+                {COMMONNESS_LABELS[data.commonness]}
+              </span>
+            )}
           </div>
 
           <Button
@@ -300,21 +358,27 @@ function WordInfoPanel({ word }: WordInfoProps) {
         </p>
 
         {/* Collapsible sections */}
-        <CollapsibleSection title="Examples">
-          <ol className="list-decimal list-inside space-y-2 pl-1">
-            {data.examples.map((ex, i) => (
-              <li key={i}>{ex}</li>
-            ))}
-          </ol>
-        </CollapsibleSection>
+        {data.examples && (data.examples[0] || data.examples[1]) && (
+          <CollapsibleSection title="Examples">
+            <ol className="list-decimal list-inside space-y-2 pl-1">
+              {data.examples.filter(Boolean).map((ex, i) => (
+                <li key={i}>{ex}</li>
+              ))}
+            </ol>
+          </CollapsibleSection>
+        )}
 
-        <CollapsibleSection title="Memory Trick">
-          <p>{data.memoryTrick}</p>
-        </CollapsibleSection>
+        {data.memoryTrick && (
+          <CollapsibleSection title="Memory Trick">
+            <p>{data.memoryTrick}</p>
+          </CollapsibleSection>
+        )}
 
-        <CollapsibleSection title="Usage">
-          <p>{data.usage}</p>
-        </CollapsibleSection>
+        {data.usage && (
+          <CollapsibleSection title="Usage">
+            <p>{data.usage}</p>
+          </CollapsibleSection>
+        )}
       </div>
     </>
   );
@@ -379,6 +443,28 @@ export default function ExplorePage() {
     : 'pragmatic';
 
   const [sessionPath, setSessionPath] = useState<string[]>(() => getSessionPath());
+  const [lookupState, setLookupState] = useState<LookupState>({ status: 'loading' });
+
+  // Fetch word data whenever the word changes
+  useEffect(() => {
+    let cancelled = false;
+    setLookupState({ status: 'loading' });
+
+    lookupWord(word).then((result) => {
+      if (cancelled) return;
+      if (result.kind === 'found') {
+        setLookupState({ status: 'found', data: result.data });
+      } else if (result.kind === 'not-found') {
+        setLookupState({ status: 'not-found' });
+      } else {
+        setLookupState({ status: 'error', reason: result.reason });
+      }
+    }).catch((err) => {
+      if (!cancelled) setLookupState({ status: 'error', reason: String(err) });
+    });
+
+    return () => { cancelled = true; };
+  }, [word]);
 
   // Record in history and update session path whenever we land on a word
   useEffect(() => {
@@ -386,7 +472,10 @@ export default function ExplorePage() {
     setSessionPath(updateSessionPath(word));
   }, [word]);
 
-  const graphData = buildGraphData(word);
+  const graphData =
+    lookupState.status === 'found'
+      ? buildGraphDataFromWordData(word, lookupState.data)
+      : { centre: word, nodes: [] };
 
   const handleBack = useCallback(() => {
     navigate('/');
@@ -429,7 +518,7 @@ export default function ExplorePage() {
           aria-label="Word information"
           className="lg:flex-[3] lg:max-w-sm px-6 lg:px-8 py-6 lg:py-10 lg:overflow-y-auto"
         >
-          <WordInfoPanel word={word} />
+          <WordInfoPanel word={word} lookupState={lookupState} />
         </aside>
       </div>
     </div>

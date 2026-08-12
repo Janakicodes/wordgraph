@@ -27,12 +27,19 @@ export interface WordCollection {
   collectionId: number; // FK to collections.id
 }
 
+export interface WordApiCache {
+  word: string;         // primary key (always lowercase)
+  data: string;         // JSON-serialised WordData (or null sentinel)
+  cachedAt: number;     // Date.now() timestamp
+}
+
 // ── Database class ────────────────────────────────────────────────────────────
 
 class WordGraphDB extends Dexie {
   savedWords!: Table<SavedWord, string>;
   collections!: Table<Collection, number>;
   wordCollections!: Table<WordCollection, number>;
+  wordApiCache!: Table<WordApiCache, string>;
 
   constructor() {
     super('wordgraph');
@@ -40,6 +47,12 @@ class WordGraphDB extends Dexie {
       savedWords: 'word, savedAt, *tags',
       collections: '++id, name, createdAt',
       wordCollections: '++id, word, collectionId, [word+collectionId]',
+    });
+    this.version(2).stores({
+      savedWords: 'word, savedAt, *tags',
+      collections: '++id, name, createdAt',
+      wordCollections: '++id, word, collectionId, [word+collectionId]',
+      wordApiCache: 'word, cachedAt',
     });
   }
 }
