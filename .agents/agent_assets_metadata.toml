@@ -1,0 +1,9 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "o7rxFaclB9qhD3yoSw9hx"
+uri = "file://docs/wordgraph-prd.pdf"
+type = "pdf"
+title = "WordGraph PRD v2.0"
+description = "Product Requirements Document — vision, personas, tech stack, feature inventory, data model, API dependencies, roadmap"
