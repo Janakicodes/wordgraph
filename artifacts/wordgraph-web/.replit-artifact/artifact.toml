@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "WordGraph"
+description = "A calm, typography-led vocabulary exploration app where people search for words, see how synonyms, antonyms, and related concepts connect, and move through a visual knowledge map."
+version = "1.0.0"
+id = "artifacts/wordgraph-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22060
+
+[services.development]
+run = "pnpm --filter @workspace/wordgraph-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/wordgraph-web", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/wordgraph-web/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22060"
+BASE_PATH = "/"

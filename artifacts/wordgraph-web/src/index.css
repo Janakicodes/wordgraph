@@ -1,0 +1,29 @@
+@import '@workspace/wordgraph-design-system/styles.css';
+
+/* Product-specific motion and layout helpers live here; theme values stay in
+ * @workspace/wordgraph-design-system. */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-width: 320px;
+  }
+}
+
+@layer utilities {
+  .graph-edge {
+    transition: stroke-opacity var(--motion-graph) ease;
+  }
+
+  .graph-node {
+    transition:
+      transform var(--motion-graph) cubic-bezier(0.22, 1, 0.36, 1),
+      opacity var(--motion-ui) ease;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+}

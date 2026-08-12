@@ -1,0 +1,1449 @@
+# WordGraph
+
+## Visual Vocabulary Explorer
+
+**Platform:** Responsive Web Application
+**Version:** MVP v1.1
+**Status:** Product Definition
+
+---
+
+# 1. Product Vision
+
+WordGraph is a visual vocabulary exploration tool that helps users discover how English words connect.
+
+Instead of:
+
+> Word → Definition → Memorize
+
+WordGraph enables:
+
+> **Word → Relationships → Explore → Understand → Remember**
+
+The product should feel like exploring a **visual map of language**.
+
+It combines:
+
+* Dictionary
+* Mind map
+* Knowledge graph
+* Personal vocabulary library
+
+The core experience should feel closer to **Obsidian's exploration model** than a traditional vocabulary-learning app.
+
+However, WordGraph should **not attempt to recreate Obsidian**. Obsidian is an inspiration for the personal library and graph mental model, not a feature checklist.
+
+---
+
+# 2. Product Positioning
+
+### Primary positioning
+
+> **Explore words. See how they connect. Build your vocabulary map.**
+
+### Short description
+
+> A visual vocabulary explorer that helps you discover and understand connected words.
+
+### Core differentiator
+
+Traditional vocabulary tools focus on:
+
+* Definitions
+* Flashcards
+* Quizzes
+* Memorization
+
+WordGraph focuses on:
+
+* Relationships
+* Exploration
+* Context
+* Discovery
+
+---
+
+# 3. Product Principles
+
+## 1. Graph First
+
+The graph is the hero of the product.
+
+## 2. Explore, Don't Test
+
+No quizzes or forced learning mechanics.
+
+## 3. Simple by Default
+
+Only show information when the user needs it.
+
+## 4. Capture First, Organize Later
+
+Saving a word should require one click.
+
+## 5. Semantic vs Personal
+
+Separate vocabulary relationships from the user's personal organization.
+
+## 6. Local First
+
+No login required.
+
+## 7. Curiosity Over Gamification
+
+The product should encourage users to naturally explore one word after another.
+
+---
+
+# 4. Target Users
+
+## Primary
+
+### English learners
+
+People who want to expand vocabulary through contextual exploration.
+
+### Students
+
+Students preparing for exams, interviews, writing, and academic work.
+
+### Professionals
+
+People looking to improve business communication and written vocabulary.
+
+### Writers and readers
+
+People who frequently encounter unfamiliar or interesting words.
+
+---
+
+# 5. User Problem
+
+When users encounter an unfamiliar word, they typically need to perform several separate actions:
+
+1. Look up the meaning.
+2. Find pronunciation.
+3. Search synonyms.
+4. Search antonyms.
+5. Understand usage.
+6. Search related words.
+7. Decide whether to save it.
+8. Remember where they encountered it.
+
+Existing dictionary experiences provide the information but don't encourage **exploration between words**.
+
+WordGraph turns vocabulary lookup into a connected experience.
+
+---
+
+# 6. Core User Loop
+
+The entire MVP should optimize this loop:
+
+```text
+SEARCH
+   ↓
+DISCOVER
+   ↓
+EXPLORE CONNECTION
+   ↓
+UNDERSTAND
+   ↓
+SAVE
+   ↓
+EXPLORE AGAIN
+```
+
+Example:
+
+```text
+PRAGMATIC
+    ↓
+PRACTICAL
+    ↓
+FEASIBLE
+    ↓
+REALISTIC
+    ↓
+IDEALISTIC
+```
+
+The user should feel that they are **travelling through language**.
+
+---
+
+# 7. Primary User Journey
+
+### Step 1
+
+User opens WordGraph.
+
+### Step 2
+
+Searches:
+
+**Pragmatic**
+
+### Step 3
+
+The word appears in the center of the graph.
+
+### Step 4
+
+User sees:
+
+🟢 Practical
+🟢 Sensible
+🟢 Realistic
+🔴 Idealistic
+🔵 Strategy
+🔵 Decision
+
+### Step 5
+
+User clicks:
+
+**Practical**
+
+### Step 6
+
+Practical smoothly becomes the center.
+
+### Step 7
+
+The surrounding graph reorganizes.
+
+### Step 8
+
+User discovers another word.
+
+### Step 9
+
+User saves a word they like.
+
+### Step 10
+
+The word appears in their Library.
+
+---
+
+# 8. Homepage
+
+The homepage should NOT feel like a dashboard.
+
+It should immediately communicate the core product.
+
+### Primary message
+
+> **What word are you curious about?**
+
+### Search
+
+Large central search bar.
+
+Placeholder:
+
+> Search a word...
+
+Optional examples:
+
+> Try: pragmatic · ephemeral · eloquent
+
+---
+
+## Secondary content
+
+Below the search:
+
+### Continue Exploring
+
+Resume the last exploration.
+
+Example:
+
+> Continue exploring **Pragmatic**
+
+### Recently Explored
+
+Show the user's recently viewed words.
+
+### Saved Words
+
+Small entry point into their library.
+
+Avoid large dashboard cards.
+
+---
+
+# 9. Word Explorer
+
+This is the most important screen.
+
+The graph should occupy the majority of the viewport.
+
+### Desktop structure
+
+```text
+┌────────────────────────────────────────────┐
+│ Search                                     │
+├────────────────────────────────────────────┤
+│                                            │
+│                                            │
+│              practical                     │
+│                   │                        │
+│                   │                        │
+│    sensible ─ PRAGMATIC ─ idealistic       │
+│                   │                        │
+│                   │                        │
+│                strategy                    │
+│                                            │
+│                                            │
+├────────────────────────────────────────────┤
+│ Meaning                                    │
+│ Practical and realistic in approach.       │
+│                                            │
+│ Examples +   Memory Trick +   Usage +      │
+└────────────────────────────────────────────┘
+```
+
+---
+
+# 10. Graph Design
+
+The graph should feel like a **knowledge map**, not a conventional mind map.
+
+Do NOT use:
+
+* colorful circles
+* bubble nodes
+* heavy borders
+* large cards
+* excessive arrows
+
+Use:
+
+* typography
+* whitespace
+* subtle lines
+* scale
+* restrained color
+* smooth motion
+
+The center word is the visual anchor.
+
+---
+
+# 11. Relationship Types
+
+Only three semantic relationship types exist.
+
+## Synonym
+
+Words with similar meanings.
+
+Color:
+
+Muted Green
+
+Example:
+
+Pragmatic → Practical
+
+---
+
+## Antonym
+
+Words with opposite meanings.
+
+Color:
+
+Muted Red
+
+Example:
+
+Pragmatic → Idealistic
+
+---
+
+## Related
+
+Contextually connected vocabulary.
+
+Color:
+
+Muted Blue
+
+Example:
+
+Pragmatic → Strategy
+
+---
+
+# 12. Relationship Rules
+
+The graph must not become a dumping ground of vaguely associated words.
+
+### Synonyms
+
+Must have substantially similar meaning.
+
+### Antonyms
+
+Must represent a meaningful conceptual opposite.
+
+### Related
+
+Should primarily represent:
+
+* contextual associations
+* commonly connected vocabulary
+* concepts closely associated with the word
+* word-family relationships where useful
+
+Avoid weak or arbitrary associations.
+
+---
+
+# 13. Graph Density
+
+Do not display every possible relationship immediately.
+
+Default:
+
+Show the strongest approximately **5–8 connections**.
+
+If more exist:
+
+> * 12 more
+
+Allow the user to expand.
+
+This keeps the graph readable.
+
+---
+
+# 14. Graph Navigation
+
+Users can:
+
+* Click a word
+* Pan
+* Zoom
+* Reset
+* Drag the graph
+* Center the selected word
+
+### Clicking a word
+
+The selected word becomes the new center.
+
+Use a smooth 300–500ms transition.
+
+Do NOT reload the page.
+
+Do NOT flash or rebuild the entire interface abruptly.
+
+The experience should feel like moving through a map.
+
+---
+
+# 15. Exploration Path
+
+Track the user's current exploration path during a session.
+
+Example:
+
+```text
+Pragmatic
+   →
+Practical
+   →
+Feasible
+   →
+Realistic
+```
+
+Display this subtly as:
+
+> **Your exploration**
+
+This is not gamification.
+
+It simply helps users understand where they've travelled.
+
+Allow the user to click a previous word to return to it.
+
+---
+
+# 16. Word Information
+
+Every word should contain:
+
+### Word
+
+Large typography.
+
+### Pronunciation
+
+IPA + audio button when available.
+
+### Meaning
+
+One concise primary definition.
+
+### Part of Speech
+
+Example:
+
+Adjective
+
+### Optional metadata
+
+CEFR level
+
+Commonness
+
+---
+
+# 17. Commonness
+
+Where reliable data is available, indicate how commonly the word is used.
+
+Examples:
+
+**Very Common**
+
+**Common**
+
+**Less Common**
+
+Avoid subjective labels such as "easy" or "hard" unless reliable data supports them.
+
+---
+
+# 18. Secondary Information
+
+Keep secondary information collapsed.
+
+### Examples
+
+Show exactly two natural sentences.
+
+### Memory Trick
+
+Show a concise mnemonic.
+
+### Usage
+
+Explain when/how the word is commonly used.
+
+### Common Mistake
+
+Optional future feature.
+
+---
+
+# 19. Information Hierarchy
+
+The user should see:
+
+### Immediately
+
+Word
+
+Meaning
+
+Graph
+
+### On interaction
+
+Pronunciation
+
+Save
+
+### On expansion
+
+Examples
+
+Memory Trick
+
+Usage
+
+This prevents information overload.
+
+---
+
+# 20. Save
+
+Every word has a simple save/bookmark action.
+
+One click:
+
+**Save ✓**
+
+Do not immediately force the user to choose a collection.
+
+Follow:
+
+> **Capture first. Organize later.**
+
+After saving, optionally offer:
+
+> Add to collection
+
+---
+
+# 21. Personal vs Semantic Graph
+
+This distinction is important.
+
+## Semantic Graph
+
+Generated by WordGraph.
+
+Relationships:
+
+🟢 Synonym
+🔴 Antonym
+🔵 Related
+
+## Personal Graph
+
+Created through the user's actions.
+
+Includes:
+
+* Saved words
+* Collections
+* Tags
+* Notes
+
+Do not mix these concepts visually by default.
+
+---
+
+# 22. Library
+
+The Library is the user's personal vocabulary knowledge base.
+
+It should be **Obsidian-inspired**, but intentionally simpler.
+
+The MVP Library has:
+
+### Words
+
+Saved vocabulary.
+
+### Collections
+
+User-created groups.
+
+### Notes
+
+Personal context.
+
+### Tags
+
+Lightweight organization.
+
+---
+
+# 23. Library Layout
+
+Desktop:
+
+```text
+┌──────────────┬─────────────────────────────┐
+│ LIBRARY      │                             │
+│              │                             │
+│ All Words    │     Saved Words             │
+│              │                             │
+│ Collections  │                             │
+│              │                             │
+│ Work         │                             │
+│ Books        │                             │
+│ Interview    │                             │
+│ Finance      │                             │
+│              │                             │
+│ Tags         │                             │
+│ #important   │                             │
+│ #writing     │                             │
+└──────────────┴─────────────────────────────┘
+```
+
+The sidebar should feel like a file explorer.
+
+---
+
+# 24. Collections
+
+Users can:
+
+* Create
+* Rename
+* Delete
+* Add words
+* Remove words
+
+A word can belong to multiple collections.
+
+Example:
+
+**Pragmatic**
+
+Collections:
+
+* Product Management
+* Work
+* Books
+
+---
+
+# 25. Tags
+
+Users can add lightweight tags.
+
+Examples:
+
+#work
+
+#writing
+
+#important
+
+#books
+
+Tags are metadata.
+
+They do not become semantic graph relationships.
+
+---
+
+# 26. Personal Notes
+
+Users can attach a note to a saved word.
+
+Example:
+
+**Pragmatic**
+
+> Useful word for describing product decisions that prioritize what is actually achievable.
+
+The note is private and stored locally.
+
+Do not collect note content in analytics.
+
+---
+
+# 27. Library Graph
+
+Users can switch between:
+
+### List
+
+Saved words.
+
+### Graph
+
+Visual representation of their saved vocabulary.
+
+The personal graph should only show saved words by default.
+
+Users can optionally filter by:
+
+* Collection
+* Tag
+
+---
+
+# 28. Backlinks
+
+Do not build a complex Obsidian-style backlink system in MVP.
+
+Instead, provide simple context:
+
+> Saved in:
+>
+> Work
+> Product Management
+
+Advanced backlinks can be considered later.
+
+---
+
+# 29. Local-First Architecture
+
+No login.
+
+No account.
+
+No mandatory cloud storage.
+
+Use IndexedDB for:
+
+* Saved words
+* Collections
+* Tags
+* Notes
+* History
+* Preferences
+
+Use Dexie.js or an equivalent abstraction.
+
+---
+
+# 30. Data Ownership
+
+The user should own their data.
+
+Provide:
+
+### Export
+
+JSON
+
+Markdown
+
+CSV where useful
+
+### Import
+
+JSON
+
+This ensures users can take their vocabulary library with them.
+
+---
+
+# 31. Offline
+
+Previously viewed words should be cached.
+
+Saved words must remain accessible offline.
+
+Library must function offline.
+
+The core application should progressively become a PWA.
+
+---
+
+# 32. Responsive Design
+
+## Desktop
+
+Primary experience.
+
+Graph takes approximately 70–80% of available space.
+
+## Tablet
+
+Graph remains dominant.
+
+Information becomes a lower panel.
+
+## Mobile
+
+Graph remains the primary interaction.
+
+Controls become compact.
+
+Information appears below.
+
+Do not simply shrink the desktop experience.
+
+---
+
+# 33. Navigation
+
+Desktop:
+
+Home
+
+Explore
+
+Library
+
+Settings
+
+Mobile:
+
+Home
+
+Explore
+
+Library
+
+---
+
+# 34. Design System
+
+Visual direction:
+
+**Obsidian × Apple × Linear**
+
+Characteristics:
+
+* Neutral interface
+* Typography-led
+* Generous whitespace
+* Minimal shadows
+* Subtle borders
+* Restrained color
+* Beautiful dark mode
+
+Semantic colors are primarily reserved for the vocabulary graph.
+
+---
+
+# 35. Search
+
+Search should be instant and forgiving.
+
+Support:
+
+* exact word
+* partial word
+* suggestions
+* recently searched words
+
+Example:
+
+User types:
+
+> prag
+
+Suggestions:
+
+Pragmatic
+
+Pragmatism
+
+Pragmatically
+
+---
+
+# 36. Search Result
+
+Each result should show:
+
+Word
+
+Part of speech
+
+Short meaning
+
+Example:
+
+**Pragmatic**
+
+*adjective*
+
+Practical and realistic.
+
+---
+
+# 37. URL Structure
+
+Every explored word should have a shareable URL.
+
+Example:
+
+`/explore/pragmatic`
+
+A user should be able to:
+
+* refresh
+* copy the URL
+* share the URL
+
+and another user should land directly on that word.
+
+No login required.
+
+---
+
+# 38. Future Sharing
+
+Later, consider:
+
+> Share this word graph
+
+This could generate a beautiful shareable preview.
+
+Do not build advanced social functionality in MVP.
+
+---
+
+# 39. Notifications
+
+Not part of MVP.
+
+Consider later:
+
+* Word of the day
+* Saved-word resurfacing
+* Browser notifications
+
+The product should not become dependent on notification-driven engagement.
+
+---
+
+# 40. Analytics
+
+Use privacy-conscious anonymous analytics.
+
+Track:
+
+* Search performed
+* Word opened
+* Relationship clicked
+* Exploration depth
+* Word saved
+* Collection created
+* Return visit
+
+Do NOT track:
+
+* Personal notes
+* Private library content unnecessarily
+* Sensitive user data
+
+---
+
+# 41. North Star Metric
+
+## Meaningful Word Explorations per Active User
+
+A meaningful exploration is:
+
+1. User opens/searches a word.
+2. User interacts with at least one relationship.
+3. User continues exploring.
+
+This measures whether the product is actually delivering its core value.
+
+---
+
+# 42. Supporting Metrics
+
+### Discovery
+
+* Search → Word Open rate
+* Word → Relationship Click rate
+* Average exploration depth
+
+### Retention
+
+* 7-day return rate
+* 30-day return rate
+
+### Personalization
+
+* Words saved per active user
+* Collection creation
+* Notes added
+
+### Product quality
+
+* Search success rate
+* Graph interaction rate
+* Error rate
+* Page load time
+
+---
+
+# 43. MVP Scope
+
+## P0 — Must Have
+
+### Search
+
+### Word information
+
+### Interactive graph
+
+### Synonyms
+
+### Antonyms
+
+### Related words
+
+### Click-to-explore
+
+### Meaning
+
+### Pronunciation
+
+### Two example sentences
+
+### Memory trick
+
+### Save word
+
+### Local library
+
+### Collections
+
+### Tags
+
+### Personal notes
+
+### Light/dark mode
+
+### Responsive web experience
+
+---
+
+# 44. P1 — Should Have
+
+* Exploration history
+* Exploration path
+* Library graph
+* Export
+* Import
+* Audio pronunciation
+* Commonness indicator
+* PWA support
+* Better offline caching
+
+---
+
+# 45. P2 — Later
+
+### Smart Discovery
+
+Recommend connected words based on exploration history.
+
+### Browser Extension
+
+Highlight a word on any webpage.
+
+> Right click → Explore in WordGraph
+
+### AI Memory Tricks
+
+Generate personalized memory associations.
+
+### Smart Collections
+
+Suggest where a saved word belongs.
+
+### Cross-device Sync
+
+Optional account-based sync.
+
+---
+
+# 46. Explicit Non-Goals
+
+Do not build:
+
+* Quizzes
+* Flashcards
+* Streaks
+* XP
+* Leaderboards
+* Social network
+* Friends
+* Comments
+* AI chatbot
+* Complex Markdown editor
+* Advanced backlink system
+* Complex folder hierarchy
+* Gamification
+* Mandatory registration
+* Advertising
+* Paid subscription in MVP
+
+---
+
+# 47. Technical Architecture
+
+Recommended:
+
+### Frontend
+
+React
+
+TypeScript
+
+Tailwind CSS
+
+### Graph
+
+Evaluate:
+
+React Flow
+
+Cytoscape.js
+
+Choose based on:
+
+* graph performance
+* dynamic layouts
+* interaction quality
+* animation support
+* responsive behavior
+
+### Storage
+
+IndexedDB
+
+Dexie.js
+
+### Icons
+
+Lucide React
+
+### Hosting
+
+Vercel or equivalent
+
+---
+
+# 48. Architecture Principles
+
+Separate:
+
+* UI
+* Word data
+* Search
+* Graph logic
+* Local storage
+* Library
+* Settings
+
+Use reusable components.
+
+Do not put application state inside individual graph nodes.
+
+---
+
+# 49. Core Components
+
+Create reusable components:
+
+SearchBar
+
+WordExplorer
+
+WordGraph
+
+WordNode
+
+GraphEdge
+
+GraphLegend
+
+WordHeader
+
+WordDefinition
+
+Pronunciation
+
+ExpandableSection
+
+ExampleSentences
+
+MemoryTrick
+
+SaveButton
+
+CollectionSelector
+
+Tag
+
+LibrarySidebar
+
+LibraryList
+
+LibraryGraph
+
+NoteEditor
+
+ExplorationPath
+
+Toast
+
+Modal
+
+EmptyState
+
+LoadingState
+
+---
+
+# 50. Performance Requirements
+
+Initial load:
+
+< 2 seconds on a reasonable connection.
+
+Cached search:
+
+< 300ms target.
+
+Graph interaction:
+
+60 FPS target.
+
+Clicking a graph node should feel immediate.
+
+Avoid unnecessary API requests.
+
+Cache previously viewed words.
+
+---
+
+# 51. Accessibility
+
+Do not rely solely on color.
+
+Every relationship must have a semantic label.
+
+Examples:
+
+> Practical — synonym of Pragmatic
+
+> Idealistic — antonym of Pragmatic
+
+> Strategy — related to Pragmatic
+
+Support:
+
+* keyboard navigation
+* screen readers
+* visible focus
+* adequate contrast
+* reduced motion
+
+---
+
+# 52. MVP Definition of Done
+
+The MVP is successful if a user can:
+
+1. Open WordGraph.
+2. Search for a word.
+3. See the word at the center of an interactive graph.
+4. Understand its meaning.
+5. See synonyms, antonyms, and related words.
+6. Understand why a word is connected.
+7. Click a connected word.
+8. See it become the new center.
+9. Continue exploring.
+10. See pronunciation.
+11. View two example sentences.
+12. Reveal a memory trick.
+13. Save a word.
+14. Organize saved words into collections.
+15. Add tags.
+16. Add personal notes.
+17. View their saved vocabulary.
+18. View their personal vocabulary graph.
+19. Export their data.
+20. Return later without creating an account.
+
+---
+
+# 53. The Product Test
+
+Before adding any feature, ask:
+
+> **Does this make exploring and understanding connected words better?**
+
+If the answer is no, it probably doesn't belong in the MVP.
+
+---
+
+# 54. The Ideal First Session
+
+A user opens WordGraph.
+
+They see:
+
+> **What word are you curious about?**
+
+They search:
+
+**PRAGMATIC**
+
+The graph appears.
+
+They see:
+
+🟢 Practical
+🟢 Realistic
+🟢 Sensible
+🔴 Idealistic
+🔵 Strategy
+🔵 Decision
+
+They click:
+
+**Practical**
+
+Practical moves to the center.
+
+The graph changes.
+
+They click:
+
+**Feasible**
+
+Then:
+
+**Viable**
+
+Then:
+
+**Realistic**
+
+They have discovered five new words without being asked to take a quiz.
+
+They save:
+
+**Feasible**
+
+The app says:
+
+> Saved ✓
+
+They continue exploring.
+
+Later they open Library and see:
+
+**Feasible**
+
+under:
+
+Work → Product Management
+
+---
+
+# 55. Long-Term Vision
+
+The long-term opportunity is to become a **personal vocabulary knowledge graph**.
+
+A user's library gradually becomes a map of words they have encountered, understood, and personally connected with.
+
+The evolution is:
+
+### V1
+
+Explore words.
+
+### V2
+
+Build your vocabulary map.
+
+### V3
+
+Build your personal language knowledge base.
+
+The product should never lose its core simplicity.
+
+---
+
+# 56. One-Sentence Product Definition
+
+> **WordGraph is a visual vocabulary explorer where every word becomes a doorway to discovering the words around it.**
