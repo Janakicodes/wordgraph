@@ -212,6 +212,38 @@ export function WordGraph({ data, className }: WordGraphProps) {
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
       >
+        {/* Legend — fixed in top-left corner, unaffected by pan */}
+        <g role="list" aria-label="Graph legend">
+          {(
+            [
+              ['synonym', 'Synonym'],
+              ['antonym', 'Antonym'],
+              ['related', 'Related'],
+            ] as [RelationshipType, string][]
+          ).map(([type, label], i) => (
+            <g
+              key={type}
+              role="listitem"
+              transform={`translate(${16 + i * 82}, 18)`}
+              aria-label={`${label}: ${type === 'synonym' ? 'green' : type === 'antonym' ? 'red' : 'blue'}`}
+            >
+              <circle r={4} cx={0} cy={0} fill={typeColor(type)} aria-hidden />
+              <text
+                x={10}
+                y={0}
+                dominantBaseline="middle"
+                fill={typeColor(type)}
+                fontSize={11}
+                fontFamily="var(--font-sans)"
+                style={{ userSelect: 'none' }}
+                aria-hidden
+              >
+                {label}
+              </text>
+            </g>
+          ))}
+        </g>
+
         <g transform={`translate(${pan.x}, ${pan.y})`}>
           {/* Edges */}
           {nodes.map((node) => (
@@ -268,39 +300,9 @@ export function WordGraph({ data, className }: WordGraphProps) {
         </g>
       </svg>
 
-      {/* Legend + controls row */}
-      <div className="flex items-center justify-between w-full max-w-2xl px-2">
-        {/* Legend */}
-        <div
-          className="flex items-center gap-4 text-xs"
-          role="list"
-          aria-label="Graph legend"
-        >
-          {(
-            [
-              ['synonym', 'Synonym'],
-              ['antonym', 'Antonym'],
-              ['related', 'Related'],
-            ] as [RelationshipType, string][]
-          ).map(([type, label]) => (
-            <div
-              key={type}
-              role="listitem"
-              className="flex items-center gap-1.5"
-              aria-label={`${label} nodes are shown in ${type === 'synonym' ? 'green' : type === 'antonym' ? 'red' : 'blue'}`}
-            >
-              <span
-                className="block w-2 h-2 rounded-full"
-                style={{ backgroundColor: typeColor(type) }}
-                aria-hidden
-              />
-              <span style={{ color: typeColor(type) }}>{label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Reset pan button */}
-        {hasPanned && (
+      {/* Controls row — only shown when the graph has been panned */}
+      {hasPanned && (
+        <div className="flex items-center justify-end w-full max-w-2xl px-2">
           <button
             type="button"
             onClick={resetPan}
@@ -309,8 +311,8 @@ export function WordGraph({ data, className }: WordGraphProps) {
           >
             Reset view
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
