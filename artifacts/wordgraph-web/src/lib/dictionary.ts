@@ -1,5 +1,5 @@
 // Dictionary API client with IndexedDB caching
-// Priority: static WORD_DB (authoritative) → IndexedDB cache → Free Dictionary API
+// Priority: static WORD_DB (authoritative) → IndexedDB cache → Free Dictionary API → Datamuse API
 
 import { db } from '@/lib/db';
 import { WORD_DB, type WordData } from '@/data/words';
@@ -121,6 +121,132 @@ function normalise(entries: FDEntry[]): WordData | null {
   };
 }
 
+// ── Datamuse API types ────────────────────────────────────────────────────────
+
+interface DatamuseWord {
+  word: string;
+  score?: number;
+  tags?: string[];
+  defs?: string[];
+}
+
+// ── Datamuse fallback lookup ──────────────────────────────────────────────────
+
+/**
+ * Attempt to build WordData for `key` using the Datamuse API.
+ *
+ * Returns WordData when the word is found.
+ * Returns null when ALL requests succeeded (2xx) but returned no data
+ *   — this is a positive "not found" that the caller may cache.
+ * Throws when the word has no data AND at least one request failed with
+ *   a non-2xx status or a parse error — the caller must NOT cache a
+ *   not-found sentinel in that case, as the result is uncertain.
+ */
+async function lookupViaDatamuse(key: string): Promise<WordData | null> {
+  const enc = encodeURIComponent(key);
+
+  // Fire all four Datamuse queries in parallel.
+  // Use allSettled so a network-level rejection on one endpoint does not abort
+  // the others — we still want to use data from whichever requests succeed.
+  const [synSettled, antSettled, relSettled, defSettled] = await Promise.allSettled([
+    fetch(`https://api.datamuse.com/words?rel_syn=${enc}`),
+    fetch(`https://api.datamuse.com/words?rel_ant=${enc}`),
+    fetch(`https://api.datamuse.com/words?rel_jja=${enc}&rel_jjb=${enc}`),
+    fetch(`https://api.datamuse.com/words?sp=${enc}&md=dp`),
+  ]);
+
+  // Parse each settled result; track whether any request failed.
+  // Failure = network rejection OR non-2xx status OR malformed JSON.
+  // Only a 2xx response that parses as an empty array is treated as "confirmed empty".
+  let anyFailure = false;
+
+  const tryParse = async (settled: PromiseSettledResult<Response>): Promise<DatamuseWord[]> => {
+    if (settled.status === 'rejected') {
+      anyFailure = true;
+      return [];
+    }
+    const r = settled.value;
+    if (!r.ok) {
+      anyFailure = true;
+      return [];
+    }
+    try {
+      return (await r.json()) as DatamuseWord[];
+    } catch {
+      anyFailure = true;
+      return [];
+    }
+  };
+
+  const [synWords, antWords, relWords, defWords] = await Promise.all([
+    tryParse(synSettled),
+    tryParse(antSettled),
+    tryParse(relSettled),
+    tryParse(defSettled),
+  ]);
+
+  // Filter to single-word results only, deduplicate, cap at 6 each
+  const toWordList = (items: DatamuseWord[], limit = 6) =>
+    [...new Set(items.map((w) => w.word.toLowerCase()).filter((w) => !w.includes(' ')))].slice(0, limit);
+
+  const synonyms = toWordList(synWords);
+  const antonyms = toWordList(antWords);
+  const related  = toWordList(relWords);
+
+  // Extract definition and part of speech from the ?sp= query
+  // defWords[0] is the exact word (highest score), subsequent are near-spellings
+  const exactMatch = defWords.find((w) => w.word.toLowerCase() === key);
+  const defEntry   = exactMatch ?? defWords[0];
+
+  const hasData =
+    synonyms.length > 0 ||
+    antonyms.length > 0 ||
+    related.length > 0 ||
+    (defEntry?.defs?.length ?? 0) > 0;
+
+  if (!hasData) {
+    if (anyFailure) {
+      // Some requests failed — result is uncertain; do NOT cache not-found
+      throw new Error('Datamuse API returned errors for one or more endpoints');
+    }
+    // All requests succeeded with empty results — word genuinely not found
+    return null;
+  }
+
+  // Parse the first definition string — Datamuse format: "pos\tgloss"
+  let partOfSpeech = '';
+  let definition   = '';
+  if (defEntry?.defs?.length) {
+    const raw    = defEntry.defs[0];
+    const tabIdx = raw.indexOf('\t');
+    if (tabIdx !== -1) {
+      partOfSpeech = raw.slice(0, tabIdx);
+      definition   = raw.slice(tabIdx + 1);
+    } else {
+      definition = raw;
+    }
+  }
+
+  const examples: [string, string] = [
+    `"${key}" is a word used in everyday English.`,
+    `Explore synonyms and related words to learn more about "${key}".`,
+  ];
+
+  return {
+    word: key,
+    pronunciation: '',
+    partOfSpeech,
+    definition,
+    synonyms,
+    antonyms,
+    related,
+    examples,
+    memoryTrick: '',
+    usage: '',
+    commonness: 'common',
+  };
+}
+
 // ── Cache helpers (best-effort — never throw) ─────────────────────────────────
 
 async function readCache(key: string): Promise<string | null> {
@@ -179,44 +305,65 @@ export async function lookupWord(word: string): Promise<LookupResult> {
     res = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`,
     );
-  } catch (err) {
-    // Network failure (offline, DNS, etc.)
-    return {
-      kind: 'error',
-      reason: err instanceof Error ? err.message : 'Network request failed',
-    };
+  } catch {
+    // Network failure (offline, DNS, CORS, etc.) — try Datamuse before giving up
+    return tryDatamuseFallback(key, 0);
   }
 
-  if (res.status === 404) {
-    // Confirmed not found — cache so we don't re-fetch
-    await writeCache(key, NOT_FOUND_SENTINEL);
-    return { kind: 'not-found' };
-  }
-
-  if (!res.ok) {
-    // Transient server error — don't cache, let the caller retry later
-    return {
-      kind: 'error',
-      reason: `Dictionary API returned ${res.status}`,
-    };
+  if (res.status === 404 || !res.ok) {
+    // Free Dictionary API couldn't serve this word — try Datamuse before giving up
+    return tryDatamuseFallback(key, res.status);
   }
 
   let entries: FDEntry[];
   try {
     entries = (await res.json()) as FDEntry[];
   } catch {
-    return { kind: 'error', reason: 'Could not parse dictionary response' };
+    // Parse error — try Datamuse before surfacing an error
+    return tryDatamuseFallback(key, 0);
   }
 
   const data = normalise(entries);
   if (!data) {
-    await writeCache(key, NOT_FOUND_SENTINEL);
-    return { kind: 'not-found' };
+    // Free Dictionary returned an empty/unusable result — try Datamuse
+    return tryDatamuseFallback(key, 0);
   }
 
   // Cache result (best-effort — failure here must not discard valid data)
   await writeCache(key, JSON.stringify(data));
 
+  return { kind: 'found', data };
+}
+
+// ── Datamuse fallback helper ──────────────────────────────────────────────────
+
+/**
+ * Called when the Free Dictionary API fails or returns nothing.
+ * Tries Datamuse; caches success or not-found; returns error only if
+ * Datamuse also throws (genuine network problem).
+ */
+async function tryDatamuseFallback(
+  key: string,
+  fdStatus: number,
+): Promise<LookupResult> {
+  let data: WordData | null;
+  try {
+    data = await lookupViaDatamuse(key);
+  } catch (err) {
+    // Both sources had a network failure — surface an error
+    return {
+      kind: 'error',
+      reason: err instanceof Error ? err.message : `Dictionary API returned ${fdStatus}`,
+    };
+  }
+
+  if (!data) {
+    // Both sources confirmed nothing — cache not-found sentinel
+    await writeCache(key, NOT_FOUND_SENTINEL);
+    return { kind: 'not-found' };
+  }
+
+  await writeCache(key, JSON.stringify(data));
   return { kind: 'found', data };
 }
 
