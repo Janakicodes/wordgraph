@@ -1,7 +1,8 @@
 // Static word data module for WordGraph
-// Task 2 will replace this with Dexie-backed data without touching UI components.
 
 export type RelationshipType = 'synonym' | 'antonym' | 'related';
+
+export type Commonness = 'very-common' | 'common' | 'less-common';
 
 export interface WordNode {
   word: string;
@@ -19,6 +20,7 @@ export interface WordData {
   examples: [string, string];
   memoryTrick: string;
   usage: string;
+  commonness: Commonness;
 }
 
 export interface GraphData {
@@ -46,6 +48,7 @@ export const WORD_DB: Record<string, WordData> = {
       "Think of 'pragma' from the Greek word for 'deed' or 'act' — pragmatic people act on what works, not on what sounds ideal.",
     usage:
       'Often used to describe someone who prefers practical, workable solutions over idealistic or theoretical ones. Commonly appears in business, politics, and philosophy contexts.',
+    commonness: 'common',
   },
   practical: {
     word: 'practical',
@@ -64,6 +67,7 @@ export const WORD_DB: Record<string, WordData> = {
       "Break it into 'practice' + '-al' — something practical is related to practice, to doing rather than just thinking.",
     usage:
       "Used to describe skills, solutions, or people that focus on real-world application. 'Practical' often emphasises usefulness, while 'pragmatic' emphasises adaptability.",
+    commonness: 'very-common',
   },
   realistic: {
     word: 'realistic',
@@ -82,6 +86,7 @@ export const WORD_DB: Record<string, WordData> = {
       "Comes from 'real' — a realistic person keeps their feet planted firmly in reality.",
     usage:
       "Used to describe attitudes, expectations, or representations that align with reality. 'Realistic' often carries a slightly moderating connotation, as in tempering overly optimistic expectations.",
+    commonness: 'very-common',
   },
   sensible: {
     word: 'sensible',
@@ -100,6 +105,7 @@ export const WORD_DB: Record<string, WordData> = {
       "Shares its root with 'sense' — a sensible choice is one that just makes sense.",
     usage:
       "Often applied to decisions, choices, or advice. 'Sensible' implies moderation and reasonableness, sometimes contrasting with emotional or impulsive choices.",
+    commonness: 'common',
   },
   idealistic: {
     word: 'idealistic',
@@ -118,6 +124,7 @@ export const WORD_DB: Record<string, WordData> = {
       "Comes from 'ideal' — an idealistic person pursues the ideal, even when reality falls short.",
     usage:
       "Can carry both positive (inspiring, principled) and negative (naive, impractical) connotations depending on context. Antonym of pragmatic in philosophical and political discourse.",
+    commonness: 'common',
   },
   impractical: {
     word: 'impractical',
@@ -136,6 +143,7 @@ export const WORD_DB: Record<string, WordData> = {
       "'Im-' means not, 'practical' means doable — impractical = not doable in practice.",
     usage:
       "Describes ideas, plans, or people that fail to account for real-world constraints. Often used to critique overly complex or theoretical approaches.",
+    commonness: 'less-common',
   },
   strategy: {
     word: 'strategy',
@@ -154,6 +162,7 @@ export const WORD_DB: Record<string, WordData> = {
       "From the Greek 'strategos' (general) — a strategy is what a general uses to win a campaign.",
     usage:
       "Used broadly across business, military, sports, and everyday life. A 'strategy' is higher-level than a 'tactic', referring to the overarching plan rather than specific moves.",
+    commonness: 'very-common',
   },
   decision: {
     word: 'decision',
@@ -172,6 +181,7 @@ export const WORD_DB: Record<string, WordData> = {
       "From Latin 'decidere' (to cut off) — making a decision cuts off other possibilities.",
     usage:
       "Central to both everyday conversation and formal contexts (legal, medical, business). 'Decision-making' as a compound noun refers to the entire process.",
+    commonness: 'very-common',
   },
   practicality: {
     word: 'practicality',
@@ -190,6 +200,7 @@ export const WORD_DB: Record<string, WordData> = {
       "The noun form of 'practical' — practicality is the quality of being practical.",
     usage:
       "Often used when evaluating whether something works in the real world. 'Questions of practicality' is a common phrase in policy and design contexts.",
+    commonness: 'less-common',
   },
   approach: {
     word: 'approach',
@@ -208,6 +219,7 @@ export const WORD_DB: Record<string, WordData> = {
       "'Approach' literally means to come close to something — your approach is how you get close to solving the problem.",
     usage:
       "Extremely versatile word used across all domains. As a verb, it means to come near; as a noun, it means a method or angle of attack on a problem.",
+    commonness: 'very-common',
   },
   ephemeral: {
     word: 'ephemeral',
@@ -226,6 +238,7 @@ export const WORD_DB: Record<string, WordData> = {
       "From Greek 'ephemeros' (lasting only a day) — think of a mayfly that lives for a single day.",
     usage:
       "Used in both literal and metaphorical senses. In digital contexts, refers to content or tokens that expire. In art and literature, captures the beauty of transience.",
+    commonness: 'less-common',
   },
   eloquent: {
     word: 'eloquent',
@@ -244,6 +257,7 @@ export const WORD_DB: Record<string, WordData> = {
       "From Latin 'eloqui' (to speak out) — an eloquent speaker speaks out with power and beauty.",
     usage:
       "Describes both people (an eloquent speaker) and things (an eloquent gesture). A slightly formal word, often used to praise exceptional communication.",
+    commonness: 'common',
   },
 };
 
@@ -254,11 +268,7 @@ export function buildGraphData(centreWord: string): GraphData {
   const data = WORD_DB[key];
 
   if (!data) {
-    // Word not in DB — return a minimal graph
-    return {
-      centre: centreWord,
-      nodes: [],
-    };
+    return { centre: centreWord, nodes: [] };
   }
 
   const nodes: WordNode[] = [
@@ -274,10 +284,9 @@ export function buildGraphData(centreWord: string): GraphData {
 
 export const SUGGESTION_WORDS = ['pragmatic', 'ephemeral', 'eloquent'];
 
-// ── localStorage helpers (Task 2 will replace with Dexie) ────────────────────
+// ── localStorage helpers (recent words — still localStorage-based) ────────────
 
 const RECENT_WORDS_KEY = 'wg_recent_words';
-const SAVED_WORDS_KEY = 'wg_saved_words';
 
 export function getRecentWords(): string[] {
   try {
@@ -294,41 +303,14 @@ export function addRecentWord(word: string): void {
       (w) => w.toLowerCase() !== word.toLowerCase(),
     );
     recent.unshift(word.toLowerCase());
-    localStorage.setItem(
-      RECENT_WORDS_KEY,
-      JSON.stringify(recent.slice(0, 10)),
-    );
-  } catch {
-    /* ignore */
-  }
+    localStorage.setItem(RECENT_WORDS_KEY, JSON.stringify(recent.slice(0, 10)));
+  } catch { /* ignore */ }
 }
 
-export function getSavedWords(): string[] {
-  try {
-    const raw = localStorage.getItem(SAVED_WORDS_KEY);
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
+// ── Commonness label helper ───────────────────────────────────────────────────
 
-export function isWordSaved(word: string): boolean {
-  return getSavedWords().includes(word.toLowerCase());
-}
-
-export function toggleSavedWord(word: string): boolean {
-  try {
-    const saved = getSavedWords();
-    const key = word.toLowerCase();
-    const idx = saved.indexOf(key);
-    if (idx === -1) {
-      saved.unshift(key);
-    } else {
-      saved.splice(idx, 1);
-    }
-    localStorage.setItem(SAVED_WORDS_KEY, JSON.stringify(saved));
-    return idx === -1; // returns true if now saved
-  } catch {
-    return false;
-  }
-}
+export const COMMONNESS_LABELS: Record<string, string> = {
+  'very-common': 'Very Common',
+  'common': 'Common',
+  'less-common': 'Less Common',
+};

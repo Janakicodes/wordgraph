@@ -19,6 +19,7 @@ const ExplorePage = lazy(() => import('@/pages/explore'));
 const LibraryPage = lazy(() => import('@/pages/library'));
 const SettingsPage = lazy(() => import('@/pages/settings'));
 
+
 function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[40vh]">
@@ -37,6 +38,8 @@ function Router() {
             <Route path="/explore" component={ExplorePage} />
             <Route path="/explore/:word" component={ExplorePage} />
             <Route path="/library" component={LibraryPage} />
+            <Route path="/library/collections/:id" component={LibraryPage} />
+            <Route path="/library/tags/:tag" component={LibraryPage} />
             <Route path="/settings" component={SettingsPage} />
             <Route component={NotFound} />
           </Switch>
