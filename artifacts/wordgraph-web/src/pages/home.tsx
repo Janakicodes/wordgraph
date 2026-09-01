@@ -1,30 +1,91 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { Search, ArrowRight, Clock } from 'lucide-react';
 import { Button } from '@workspace/wordgraph-design-system/components/ui/button';
 import { Input } from '@workspace/wordgraph-design-system/components/ui/input';
 import { cn } from '@workspace/wordgraph-design-system/lib/utils';
 import { SUGGESTION_WORDS, getRecentWords } from '@/data/words';
+import { useWordSuggestions } from '@/hooks/use-word-suggestions';
+import { SearchSuggestions } from '@/components/search-suggestions';
 
 export default function HomePage() {
   const [, navigate] = useLocation();
   const [query, setQuery] = useState('');
   const [recentWords, setRecentWords] = useState<string[]>([]);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+
+  const suggestions = useWordSuggestions(query);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setRecentWords(getRecentWords().slice(0, 5));
   }, []);
 
+  // Reset active index when suggestions change
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [suggestions]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handlePointerDown = (e: PointerEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setSuggestionsOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, []);
+
   const handleSearch = (word: string) => {
     const trimmed = word.trim();
     if (!trimmed) return;
+    setSuggestionsOpen(false);
     navigate(`/explore/${encodeURIComponent(trimmed.toLowerCase())}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(query);
+    // If a suggestion is highlighted, select it; otherwise submit the raw query
+    if (activeIndex >= 0 && suggestions[activeIndex]) {
+      handleSearch(suggestions[activeIndex]);
+    } else {
+      handleSearch(query);
+    }
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!suggestionsOpen || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setActiveIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0,
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setActiveIndex((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1,
+        );
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setSuggestionsOpen(false);
+        setActiveIndex(-1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const showDropdown = suggestionsOpen && suggestions.length > 0;
 
   const lastWord = recentWords[0];
 
@@ -50,23 +111,48 @@ export default function HomePage() {
           role="search"
           aria-label="Word search"
         >
-          <div className="relative flex-1">
+          <div ref={containerRef} className="relative flex-1">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none"
               aria-hidden
             />
             <Input
+              ref={inputRef}
               type="search"
               placeholder="Enter any word…"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSuggestionsOpen(true);
+                setActiveIndex(-1);
+              }}
+              onFocus={() => {
+                if (query.trim().length >= 2) setSuggestionsOpen(true);
+              }}
+              onKeyDown={handleKeyDown}
               className="pl-10 h-12 text-base"
               aria-label="Search for a word"
+              aria-autocomplete="list"
+              aria-expanded={showDropdown}
+              aria-controls={showDropdown ? 'word-suggestions' : undefined}
+              aria-activedescendant={
+                activeIndex >= 0 ? `suggestion-${activeIndex}` : undefined
+              }
               autoFocus
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
             />
+            {showDropdown && (
+              <SearchSuggestions
+                id="word-suggestions"
+                suggestions={suggestions}
+                activeIndex={activeIndex}
+                query={query}
+                onSelect={handleSearch}
+                onActiveIndexChange={setActiveIndex}
+              />
+            )}
           </div>
           <Button
             type="submit"
