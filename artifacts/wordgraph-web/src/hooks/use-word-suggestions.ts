@@ -23,16 +23,23 @@ async function fetchCachedWords(): Promise<string[]> {
   }
 }
 
-async function fetchDatamuseSuggestions(query: string): Promise<string[]> {
+async function fetchDatamuseSuggestions(
+  query: string,
+  signal: AbortSignal,
+): Promise<string[]> {
   try {
     const res = await fetch(
       `https://api.datamuse.com/sug?s=${encodeURIComponent(query)}&max=10`,
+      { signal },
     );
     if (!res.ok) return [];
     const items = (await res.json()) as { word: string }[];
     // Filter to single-word results only
     return items.map((i) => i.word).filter((w) => !w.includes(' '));
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return [];
+    }
     return [];
   }
 }
@@ -82,7 +89,7 @@ export function useWordSuggestions(query: string) {
       // Fetch cached + datamuse in parallel
       const [cachedKeys, datamuse] = await Promise.all([
         fetchCachedWords(),
-        fetchDatamuseSuggestions(q),
+        fetchDatamuseSuggestions(q, controller.signal),
       ]);
 
       if (controller.signal.aborted) return;
