@@ -2,10 +2,11 @@
 // Returns deduplicated word suggestions for a query string (≥2 chars) from:
 //   1. Static WORD_DB keys   (instant, always available)
 //   2. IndexedDB wordApiCache (all previously looked-up words)
-//   3. Datamuse /sug endpoint (live completions, debounced 200 ms)
+//   3. Recent localStorage words (instant, when available)
+//   4. Datamuse /sug endpoint (live completions, debounced 200 ms)
 
 import { useState, useEffect, useRef } from 'react';
-import { WORD_DB } from '@/data/words';
+import { getRecentWords, WORD_DB } from '@/data/words';
 import { db } from '@/lib/db';
 
 const DEBOUNCE_MS = 200;
@@ -47,15 +48,35 @@ async function fetchDatamuseSuggestions(
 function rankSuggestions(
   query: string,
   words: string[],
+  recentWords: string[] = [],
 ): string[] {
   const q = query.toLowerCase();
   // Deduplicate
   const unique = [...new Set(words.map((w) => w.toLowerCase()))];
-  // Sort: starts-with first, then contains, alphabetically within each group
-  const startsWith = unique.filter((w) => w.startsWith(q)).sort();
+  const recentRanks = new Map(
+    recentWords.map((word, index) => [word.toLowerCase(), index]),
+  );
+  const compare = (a: string, b: string) => {
+    const aRecentRank = recentRanks.get(a);
+    const bRecentRank = recentRanks.get(b);
+
+    // Recent words win ties within the starts-with/contains groups. With no
+    // recent words this falls through to the existing alphabetical ordering.
+    if (aRecentRank !== undefined || bRecentRank !== undefined) {
+      if (aRecentRank === undefined) return 1;
+      if (bRecentRank === undefined) return -1;
+      if (aRecentRank !== bRecentRank) return aRecentRank - bRecentRank;
+    }
+
+    return a < b ? -1 : a > b ? 1 : 0;
+  };
+
+  // Sort: starts-with first, then contains, with recent words first within
+  // each group and alphabetic ordering as the final tie-breaker.
+  const startsWith = unique.filter((w) => w.startsWith(q)).sort(compare);
   const contains = unique
     .filter((w) => !w.startsWith(q) && w.includes(q))
-    .sort();
+    .sort(compare);
   return [...startsWith, ...contains].slice(0, MAX_SUGGESTIONS);
 }
 
@@ -79,8 +100,11 @@ export function useWordSuggestions(query: string) {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Immediately show local matches (WORD_DB + cache)
+    const recentWords = getRecentWords();
+
+    // Immediately show local matches (WORD_DB + recent words)
     const wordDbKeys = Object.keys(WORD_DB);
+    const localWords = [...wordDbKeys, ...recentWords];
 
     // Start async work in debounced timer
     timerRef.current = setTimeout(async () => {
@@ -94,14 +118,21 @@ export function useWordSuggestions(query: string) {
 
       if (controller.signal.aborted) return;
 
-      const allWords = [...wordDbKeys, ...cachedKeys, ...datamuse];
+      const allWords = [
+        ...wordDbKeys,
+        ...recentWords,
+        ...cachedKeys,
+        ...datamuse,
+      ];
       const filtered = allWords.filter((w) => w.toLowerCase().includes(q));
-      setSuggestions(rankSuggestions(q, filtered));
+      setSuggestions(rankSuggestions(q, filtered, recentWords));
     }, DEBOUNCE_MS);
 
     // Show instant local suggestions right away (no debounce)
-    const localFiltered = wordDbKeys.filter((w) => w.includes(q));
-    setSuggestions(rankSuggestions(q, localFiltered));
+    const localFiltered = localWords.filter((w) =>
+      w.toLowerCase().includes(q),
+    );
+    setSuggestions(rankSuggestions(q, localFiltered, recentWords));
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
