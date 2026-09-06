@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "o7rxFaclB9qhD3yoSw9hx"
+uri = "file://docs/wordgraph-prd.pdf"
+type = "pdf"
+title = "WordGraph PRD v2.0"
+description = "Product Requirements Document — vision, personas, tech stack, feature inventory, data model, API dependencies, roadmap"
+
+[[outputs]]
+id = "wwf9P0T-H4qDboRb2Q2-J"
+uri = "file://docs/wordgraph-functional-requirements.pdf"
+type = "pdf"
+title = "WordGraph — Functional Requirements & User Stories"
+description = "27 functional requirements across 5 areas + 11 user stories across 4 personas, with a full requirement-to-story traceability matrix"
