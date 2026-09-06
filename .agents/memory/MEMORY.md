@@ -1,0 +1,1 @@
+- [GitHub repository publishing](github-repository-publishing.md) — bulk connector uploads can be Cloudflare-blocked; full history requires authenticated Git source control.
