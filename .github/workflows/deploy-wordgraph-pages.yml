@@ -1,0 +1,51 @@
+name: Deploy WordGraph to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build WordGraph
+        run: pnpm --filter @workspace/wordgraph-web run build
+        env:
+          BASE_PATH: /wordgraph/
+          PORT: "22060"
+      - name: Add GitHub Pages route fallback
+        run: |
+          cp artifacts/wordgraph-web/dist/public/index.html artifacts/wordgraph-web/dist/public/404.html
+          touch artifacts/wordgraph-web/dist/public/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/wordgraph-web/dist/public
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
