@@ -42,6 +42,9 @@ interface FDEntry {
 // ── Cache TTL (7 days) ────────────────────────────────────────────────────────
 
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const PRIMARY_LOOKUP_TIMEOUT_MS = 1_200;
+const RELATIONSHIP_LOOKUP_TIMEOUT_MS = 2_000;
+const DEFINITION_LOOKUP_TIMEOUT_MS = 3_000;
 
 // Sentinel stored when a word is confirmed not found by the API,
 // so we don't re-fetch on every visit.
@@ -145,45 +148,32 @@ interface DatamuseWord {
 async function lookupViaDatamuse(key: string): Promise<WordData | null> {
   const enc = encodeURIComponent(key);
 
-  // Fire all four Datamuse queries in parallel.
-  // Use allSettled so a network-level rejection on one endpoint does not abort
-  // the others — we still want to use data from whichever requests succeed.
-  const [synSettled, antSettled, relSettled, defSettled] = await Promise.allSettled([
-    fetch(`https://api.datamuse.com/words?rel_syn=${enc}`),
-    fetch(`https://api.datamuse.com/words?rel_ant=${enc}`),
-    fetch(`https://api.datamuse.com/words?rel_jja=${enc}&rel_jjb=${enc}`),
-    fetch(`https://api.datamuse.com/words?sp=${enc}&md=dp`),
-  ]);
-
-  // Parse each settled result; track whether any request failed.
-  // Failure = network rejection OR non-2xx status OR malformed JSON.
-  // Only a 2xx response that parses as an empty array is treated as "confirmed empty".
-  let anyFailure = false;
-
-  const tryParse = async (settled: PromiseSettledResult<Response>): Promise<DatamuseWord[]> => {
-    if (settled.status === 'rejected') {
-      anyFailure = true;
-      return [];
-    }
-    const r = settled.value;
-    if (!r.ok) {
-      anyFailure = true;
-      return [];
-    }
+  // Fetch and parse in parallel. Optional relationships have a shorter limit;
+  // the definition request gets longer so slow graph data cannot delay the
+  // word's meaning. A failed request is not a confirmed empty result.
+  const readWords = async (url: string, timeoutMs: number) => {
     try {
-      return (await r.json()) as DatamuseWord[];
+      const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      if (!response.ok) return { words: [] as DatamuseWord[], failed: true };
+      const words: unknown = await response.json();
+      if (!Array.isArray(words)) return { words: [] as DatamuseWord[], failed: true };
+      return { words: words as DatamuseWord[], failed: false };
     } catch {
-      anyFailure = true;
-      return [];
+      return { words: [] as DatamuseWord[], failed: true };
     }
   };
 
-  const [synWords, antWords, relWords, defWords] = await Promise.all([
-    tryParse(synSettled),
-    tryParse(antSettled),
-    tryParse(relSettled),
-    tryParse(defSettled),
+  const [synResult, antResult, relResult, defResult] = await Promise.all([
+    readWords(`https://api.datamuse.com/words?rel_syn=${enc}`, RELATIONSHIP_LOOKUP_TIMEOUT_MS),
+    readWords(`https://api.datamuse.com/words?rel_ant=${enc}`, RELATIONSHIP_LOOKUP_TIMEOUT_MS),
+    readWords(`https://api.datamuse.com/words?rel_jja=${enc}&rel_jjb=${enc}`, RELATIONSHIP_LOOKUP_TIMEOUT_MS),
+    readWords(`https://api.datamuse.com/words?sp=${enc}&md=dp`, DEFINITION_LOOKUP_TIMEOUT_MS),
   ]);
+  const anyFailure = [synResult, antResult, relResult, defResult].some((result) => result.failed);
+  const synWords = synResult.words;
+  const antWords = antResult.words;
+  const relWords = relResult.words;
+  const defWords = defResult.words;
 
   // Filter to single-word results only, deduplicate, cap at 6 each
   const toWordList = (items: DatamuseWord[], limit = 6) =>
@@ -299,34 +289,30 @@ export async function lookupWord(word: string): Promise<LookupResult> {
     }
   }
 
-  // 3. Fetch from Free Dictionary API
-  let res: Response;
+  // 3. Give the primary dictionary a short window to respond. It can take
+  // 20+ seconds during an outage, while Datamuse is usually much faster.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PRIMARY_LOOKUP_TIMEOUT_MS);
+  let data: WordData | null = null;
+  let fdStatus = 0;
   try {
-    res = await fetch(
+    const res = await fetch(
       `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`,
+      { signal: controller.signal },
     );
+    fdStatus = res.status;
+    if (res.ok) {
+      const entries = (await res.json()) as FDEntry[];
+      data = normalise(entries);
+    }
   } catch {
-    // Network failure (offline, DNS, CORS, etc.) — try Datamuse before giving up
-    return tryDatamuseFallback(key, 0);
+    // Timeout, network failure, or invalid JSON: try Datamuse instead.
+  } finally {
+    clearTimeout(timeout);
   }
 
-  if (res.status === 404 || !res.ok) {
-    // Free Dictionary API couldn't serve this word — try Datamuse before giving up
-    return tryDatamuseFallback(key, res.status);
-  }
-
-  let entries: FDEntry[];
-  try {
-    entries = (await res.json()) as FDEntry[];
-  } catch {
-    // Parse error — try Datamuse before surfacing an error
-    return tryDatamuseFallback(key, 0);
-  }
-
-  const data = normalise(entries);
   if (!data) {
-    // Free Dictionary returned an empty/unusable result — try Datamuse
-    return tryDatamuseFallback(key, 0);
+    return tryDatamuseFallback(key, fdStatus);
   }
 
   // Cache result (best-effort — failure here must not discard valid data)
